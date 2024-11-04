@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title></title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <style type="text/css">
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+    </style>
+
+    <script>
+      const {externalURL} = JSON.parse(
+        window.ReactNativeWebView.injectedObjectJson(),
+      );
+
+      const script = document.createElement('script');
+      script.type = 'text/javascript';
+      script.src = `${externalURL}`;
+
+      document.head.appendChild(script);
+    </script>
+  </head>
+
+  <body>
+    <div id="loading-text">Loading...</div>
+    <div id="mq-card-cvv"></div>
+    <div id="mq-card-pan"></div>
+    <div id="mq-card-exp"></div>
+
+    <script>
+      window.onload = event => {
+        if (window.ReactNativeWebView.injectedObjectJson()) {
+          const {token} = JSON.parse(
+            window.ReactNativeWebView.injectedObjectJson(),
+          );
+
+          window.marqeta.bootstrap({
+            clientAccessToken: token,
+            component: {
+              showPan: {
+                cardCvv: {
+                  domId: 'mq-card-cvv',
+                  styles: {color: '#080B12', 'font-size': '16px'},
+                },
+                cardPan: {
+                  domId: 'mq-card-pan',
+                  format: true,
+                  styles: {color: '#080B12', 'font-size': '16px'},
+                },
+                cardExp: {
+                  domId: 'mq-card-exp',
+                  format: true,
+                  styles: {color: '#080B12', 'font-size': '16px'},
+                },
+              },
+            },
+            callbackEvents: {
+              onSuccess: () => {
+                document.getElementById('loading-text').style.display = 'none';
+              },
+              onFailure: error => {
+                window.ReactNativeWebView.postMessage(error);
+                document.getElementById('loading-text').innerText =
+                  'Failed to load. Please try again.';
+              },
+            },
+          });
+        } else {
+          window.ReactNativeWebView.postMessage(
+            'Error - No injected object found.',
+          );
+        }
+      };
+    </script>
+  </body>
+</html>
