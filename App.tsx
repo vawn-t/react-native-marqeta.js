@@ -7,7 +7,7 @@
 
 import React from 'react';
 
-import {Alert, Platform, View} from 'react-native';
+import {PixelRatio, Platform, View} from 'react-native';
 import ReactNativeBlobUtil from 'react-native-blob-util';
 import WebView from 'react-native-webview';
 
@@ -21,7 +21,21 @@ function App(): React.JSX.Element {
     htmlFilePath = 'file:///android_asset/sensitive.html';
   }
 
-  const token = '';
+  const token = 'PLACE YOUR TOKEN HERE';
+
+  const textScale = PixelRatio.getFontScale();
+
+  const fontScale = textScale > 1.5 ? 1.5 : textScale;
+
+  // JavaScript to inject into the WebView to apply text scaling based on device settings
+  const injectedJavaScript = `
+    (function() {
+      var metaTag = document.querySelector('meta[name="viewport"]');
+      if (metaTag) {
+        metaTag.setAttribute('content', 'width=device-width, initial-scale=${fontScale}, maximum-scale=1.5, user-scalable=no');
+      }
+    })();
+  `;
 
   const externalURL =
     'https://widgets-sandbox.marqeta.com/marqetajs/2.0.0/marqeta.min.js'; // NOTE: Replace with your external URL if env is production
@@ -39,11 +53,17 @@ function App(): React.JSX.Element {
         allowFileAccess
         originWhitelist={['*']}
         mixedContentMode="always"
-        injectedJavaScriptObject={{token, externalURL}} // Pass token and the external url to htmlView
+        textZoom={100 * fontScale}
+        injectedJavaScriptObject={{token, externalURL}} // Pass token, type and the external url to htmlView
+        injectedJavaScript={
+          Platform.OS === 'ios' ? injectedJavaScript : undefined
+        }
         onMessage={event => {
-          Alert.alert('Message from WebView: ' + event.nativeEvent.data);
+          Sentry.captureMessage(
+            'Message from WebView: ' + event.nativeEvent.data,
+          );
         }}
-        style={{flex: 1}}
+        style={{flex: 1, height: 24 * fontScale}}
       />
     </View>
   );
